@@ -3,11 +3,11 @@ import { z } from "zod";
 import fs from "fs";
 import { Browserbase } from "@browserbasehq/sdk";
 import { AvailableModel, LLMProvider } from "./llm/LLMProvider";
+import { logLineToString } from "./utils";
 // @ts-ignore we're using a built js file as a string here
 import { scriptContent } from "./dom/build/scriptContent";
 import { LogLine } from "./types";
 import { randomUUID } from "crypto";
-import { logLineToString } from "./utils";
 import { StagehandExtractHandler } from "./handlers/extractHandler";
 import { StagehandObserveHandler } from "./handlers/observeHandler";
 import { StagehandActHandler } from "./handlers/actHandler";

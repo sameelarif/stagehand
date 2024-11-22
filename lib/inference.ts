@@ -178,25 +178,19 @@ export async function act({
 
 export async function extract({
   instruction,
-  progress,
   previouslyExtractedContent,
   domElements,
   schema,
   llmProvider,
   modelName,
-  chunksSeen,
-  chunksTotal,
   requestId,
 }: {
   instruction: string;
-  progress: string;
   previouslyExtractedContent: any;
   domElements: string;
   schema: z.ZodObject<any>;
   llmProvider: LLMProvider;
   modelName: AvailableModel;
-  chunksSeen: number;
-  chunksTotal: number;
   requestId: string;
 }) {
   const llmClient = llmProvider.getClient(modelName, requestId);
@@ -257,8 +251,8 @@ export async function extract({
       buildMetadataPrompt(
         instruction,
         refinedResponse,
-        chunksSeen,
-        chunksTotal,
+        0,
+        1,
       ),
     ],
     response_model: {

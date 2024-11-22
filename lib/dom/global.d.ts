@@ -20,5 +20,15 @@ declare global {
     cleanupDebug: () => void;
     scrollToHeight: (height: number) => Promise<void>;
     waitForDomSettle: () => Promise<void>;
+    storeDOM: () => string;
+    restoreDOM: (storedDOM: string) => void;
+    createTextBoundingBoxes: () => void;
+    getElementBoundingBoxes: (xpath: string) => Array<{
+      text: string;
+      top: number;
+      left: number;
+      width: number;
+      height: number;
+    }>;
   }
 }
