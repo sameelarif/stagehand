@@ -1,4 +1,4 @@
-import { AvailableModel, ToolCall } from "../types";
+import { AvailableModel, ToolCall } from "../../types/model";
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
