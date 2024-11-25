@@ -600,7 +600,7 @@ export class Stagehand {
     }
   }
 
-  private async startDomDebug() {
+  async startDomDebug() {
     try {
       await this.page
         .evaluate(() => {
