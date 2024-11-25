@@ -1,16 +1,16 @@
-import { Browserbase } from "@browserbasehq/sdk";
+import { Browserbase, ClientOptions } from "@browserbasehq/sdk";
 import { type BrowserContext, chromium, type Page } from "@playwright/test";
 import { randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
 import { z } from "zod";
-import { LogLine } from "../types/log";
 import { scriptContent } from "./dom/build/scriptContent";
 import { StagehandActHandler } from "./handlers/actHandler";
 import { StagehandExtractHandler } from "./handlers/extractHandler";
 import { StagehandObserveHandler } from "./handlers/observeHandler";
 import { LLMClient } from "./llm/LLMClient";
 import { LLMProvider } from "./llm/LLMProvider";
+import { AvailableModel, LogLine } from "./types";
 import { logLineToString } from "./utils";
 
 require("dotenv").config({ path: ".env" });
