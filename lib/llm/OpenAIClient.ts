@@ -1,15 +1,15 @@
 import OpenAI, { ClientOptions } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
-import { ChatCompletionCreateParamsNonStreaming } from "openai/resources/chat";
+import {
+  ChatCompletionContentPartImage,
+  ChatCompletionContentPartText,
+  ChatCompletionCreateParamsNonStreaming,
+  ChatCompletionMessageParam,
+} from "openai/resources/chat";
 import { LogLine } from "../../types/log";
 import { AvailableModel } from "../../types/model";
 import { LLMCache } from "../cache/LLMCache";
-import {
-  ChatCompletionOptions,
-  ChatMessage,
-  ChatMessageImageContent,
-  LLMClient,
-} from "./LLMClient";
+import { ChatCompletionOptions, ChatMessage, LLMClient } from "./LLMClient";
 
 export class OpenAIClient extends LLMClient {
   private client: OpenAI;
@@ -143,10 +143,42 @@ export class OpenAIClient extends LLMClient {
       },
     });
 
-    const response = await this.client.chat.completions.create({
+    const formattedMessages: ChatCompletionMessageParam[] =
+      options.messages.map((message) => {
+        if (Array.isArray(message.content)) {
+          const contentParts = message.content.map((content) => {
+            if ("image_url" in content) {
+              return {
+                image_url: {
+                  url: content.image_url.url,
+                },
+                type: "image_url",
+              } as ChatCompletionContentPartImage;
+            } else {
+              return {
+                text: content.text,
+                type: "text",
+              } as ChatCompletionContentPartText;
+            }
+          });
+          return {
+            ...message,
+            content: contentParts,
+          } as ChatCompletionMessageParam;
+        }
+
+        return message as ChatCompletionMessageParam;
+      });
+
+    const body: ChatCompletionCreateParamsNonStreaming = {
       ...openAiOptions,
+      model: this.modelName,
+      messages: formattedMessages,
       response_format: responseFormat,
-    } as unknown as ChatCompletionCreateParamsNonStreaming); // TODO (kamath): remove this forced typecast
+      stream: false,
+    };
+
+    const response = await this.client.chat.completions.create(body);
 
     this.logger({
       category: "openai",
