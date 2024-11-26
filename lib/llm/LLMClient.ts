@@ -3,7 +3,6 @@ import { AvailableModel, ToolCall } from "../../types/model";
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
   content: ChatMessageContent;
-  name?: string;
 }
 
 export type ChatMessageContent =
@@ -17,7 +16,7 @@ export interface ChatMessageImageContent {
 }
 
 export interface ChatMessageTextContent {
-  type: Exclude<string, "image_url">;
+  type: string;
   text: string;
 }
 
