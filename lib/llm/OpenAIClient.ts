@@ -4,12 +4,7 @@ import { ChatCompletionCreateParamsNonStreaming } from "openai/resources/chat";
 import { LogLine } from "../../types/log";
 import { AvailableModel } from "../../types/model";
 import { LLMCache } from "../cache/LLMCache";
-import {
-  ChatCompletionOptions,
-  ChatMessage,
-  ChatMessageImageContent,
-  LLMClient,
-} from "./LLMClient";
+import { ChatCompletionOptions, ChatMessage, LLMClient } from "./LLMClient";
 
 export class OpenAIClient extends LLMClient {
   private client: OpenAI;
