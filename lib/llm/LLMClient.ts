@@ -9,16 +9,16 @@ export type ChatMessageContent =
   | string
   | (ChatMessageImageContent | ChatMessageTextContent)[];
 
-export type ChatMessageImageContent = {
+export interface ChatMessageImageContent {
   type: "image_url";
   image_url: { url: string };
   text?: string;
-};
+}
 
-export type ChatMessageTextContent = {
+export interface ChatMessageTextContent {
   type: string;
   text: string;
-};
+}
 
 export const modelsWithVision: AvailableModel[] = [
   "gpt-4o",
