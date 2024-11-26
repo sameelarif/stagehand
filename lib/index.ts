@@ -1,16 +1,30 @@
-import { Browserbase, ClientOptions } from "@browserbasehq/sdk";
+import { Browserbase } from "@browserbasehq/sdk";
 import { type BrowserContext, chromium, type Page } from "@playwright/test";
 import { randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
 import { z } from "zod";
+import { BrowserResult } from "../types/browser";
+import { LogLine } from "../types/log";
+import {
+  ActOptions,
+  ActResult,
+  ConstructorParams,
+  ExtractOptions,
+  ExtractResult,
+  InitFromPageOptions,
+  InitFromPageResult,
+  InitOptions,
+  InitResult,
+  ObserveOptions,
+  ObserveResult,
+} from "../types/stagehand";
 import { scriptContent } from "./dom/build/scriptContent";
 import { StagehandActHandler } from "./handlers/actHandler";
 import { StagehandExtractHandler } from "./handlers/extractHandler";
 import { StagehandObserveHandler } from "./handlers/observeHandler";
 import { LLMClient } from "./llm/LLMClient";
 import { LLMProvider } from "./llm/LLMProvider";
-import { AvailableModel, LogLine } from "./types";
 import { logLineToString } from "./utils";
 
 require("dotenv").config({ path: ".env" });
@@ -25,7 +39,7 @@ async function getBrowser(
   logger: (message: LogLine) => void,
   browserbaseSessionCreateParams?: Browserbase.Sessions.SessionCreateParams,
   browserbaseResumeSessionID?: string,
-) {
+): Promise<BrowserResult> {
   if (env === "BROWSERBASE") {
     if (!apiKey) {
       logger({
@@ -315,22 +329,7 @@ export class Stagehand {
       browserbaseResumeSessionID,
       modelName,
       modelClientOptions,
-    }: {
-      env: "LOCAL" | "BROWSERBASE";
-      apiKey?: string;
-      projectId?: string;
-      verbose?: 0 | 1 | 2;
-      debugDom?: boolean;
-      llmProvider?: LLMProvider;
-      headless?: boolean;
-      logger?: (message: LogLine) => void;
-      domSettleTimeoutMs?: number;
-      browserBaseSessionCreateParams?: Browserbase.Sessions.SessionCreateParams;
-      enableCaching?: boolean;
-      browserbaseResumeSessionID?: string;
-      modelName?: AvailableModel;
-      modelClientOptions?: ClientOptions;
-    } = {
+    }: ConstructorParams = {
       env: "BROWSERBASE",
     },
   ) {
@@ -360,14 +359,7 @@ export class Stagehand {
     modelName,
     modelClientOptions,
     domSettleTimeoutMs,
-  }: {
-    modelName?: AvailableModel;
-    modelClientOptions?: ClientOptions;
-    domSettleTimeoutMs?: number;
-  } = {}): Promise<{
-    debugUrl: string;
-    sessionUrl: string;
-  }> {
+  }: InitOptions = {}): Promise<InitResult> {
     const llmClient = modelName
       ? this.llmProvider.getClient(modelName, modelClientOptions)
       : this.llmClient;
@@ -381,7 +373,11 @@ export class Stagehand {
       this.browserbaseResumeSessionID,
     ).catch((e) => {
       console.error("Error in init:", e);
-      return { context: undefined, debugUrl: undefined, sessionUrl: undefined };
+      return {
+        context: undefined,
+        debugUrl: undefined,
+        sessionUrl: undefined,
+      } as BrowserResult;
     });
     this.context = context;
     this.page = context.pages()[0];
@@ -446,11 +442,11 @@ export class Stagehand {
     return { debugUrl, sessionUrl };
   }
 
-  async initFromPage(
-    page: Page,
-    modelName?: AvailableModel,
-    modelClientOptions?: ClientOptions,
-  ): Promise<{ context: BrowserContext }> {
+  async initFromPage({
+    page,
+    modelName,
+    modelClientOptions,
+  }: InitFromPageOptions): Promise<InitFromPageResult> {
     this.page = page;
     this.context = page.context();
     this.llmClient = modelName
@@ -478,7 +474,6 @@ export class Stagehand {
     return { context: this.context };
   }
 
-  // Logging
   private pending_logs_to_send_to_browserbase: LogLine[] = [];
 
   private is_processing_browserbase_logs: boolean = false;
@@ -657,18 +652,7 @@ export class Stagehand {
     useVision = "fallback",
     variables = {},
     domSettleTimeoutMs,
-  }: {
-    action: string;
-    modelName?: AvailableModel;
-    modelClientOptions?: ClientOptions;
-    useVision?: "fallback" | boolean;
-    variables?: Record<string, string>;
-    domSettleTimeoutMs?: number;
-  }): Promise<{
-    success: boolean;
-    message: string;
-    action: string;
-  }> {
+  }: ActOptions): Promise<ActResult> {
     if (!this.actHandler) {
       throw new Error("Act handler not initialized");
     }
@@ -747,13 +731,7 @@ export class Stagehand {
     modelName,
     modelClientOptions,
     domSettleTimeoutMs,
-  }: {
-    instruction: string;
-    schema: T;
-    modelName?: AvailableModel;
-    modelClientOptions?: ClientOptions;
-    domSettleTimeoutMs?: number;
-  }): Promise<z.infer<T>> {
+  }: ExtractOptions<T>): Promise<ExtractResult<T>> {
     if (!this.extractHandler) {
       throw new Error("Extract handler not initialized");
     }
@@ -816,13 +794,7 @@ export class Stagehand {
       });
   }
 
-  async observe(options?: {
-    instruction?: string;
-    modelName?: AvailableModel;
-    modelClientOptions?: ClientOptions;
-    useVision?: boolean;
-    domSettleTimeoutMs?: number;
-  }): Promise<{ selector: string; description: string }[]> {
+  async observe(options?: ObserveOptions): Promise<ObserveResult[]> {
     if (!this.observeHandler) {
       throw new Error("Observe handler not initialized");
     }
