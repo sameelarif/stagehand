@@ -4,7 +4,12 @@ import { ChatCompletionCreateParamsNonStreaming } from "openai/resources/chat";
 import { LogLine } from "../../types/log";
 import { AvailableModel } from "../../types/model";
 import { LLMCache } from "../cache/LLMCache";
-import { ChatCompletionOptions, LLMClient } from "./LLMClient";
+import {
+  ChatCompletionOptions,
+  ChatMessage,
+  ChatMessageImageContent,
+  LLMClient,
+} from "./LLMClient";
 
 export class OpenAIClient extends LLMClient {
   private client: OpenAI;
@@ -61,6 +66,7 @@ export class OpenAIClient extends LLMClient {
         cacheOptions,
         options.requestId,
       );
+
       if (cachedResponse) {
         this.logger({
           category: "llm_cache",
@@ -94,7 +100,7 @@ export class OpenAIClient extends LLMClient {
     }
 
     if (options.image) {
-      const screenshotMessage: any = {
+      const screenshotMessage: ChatMessage = {
         role: "user",
         content: [
           {
