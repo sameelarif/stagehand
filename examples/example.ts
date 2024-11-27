@@ -10,16 +10,14 @@ async function example() {
   });
 
   await stagehand.init();
-  await stagehand.page.goto("https://github.com/browserbase/stagehand");
-  await stagehand.act({ action: "click on the contributors" });
-  const contributor = await stagehand.extract({
-    instruction: "extract the top contributor",
+  await stagehand.page.goto("https://abrahamjuliot.github.io/creepjs/");
+  const score = await stagehand.extract({
+    instruction: "extract the trust score",
     schema: z.object({
-      username: z.string(),
-      url: z.string(),
+      score: z.number(),
     }),
   });
-  console.log(`Our favorite contributor is ${contributor.username}`);
+  console.log(`The trust score is ${score.score}`);
 }
 
 (async () => {

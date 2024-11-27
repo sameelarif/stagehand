@@ -26,6 +26,7 @@ import { StagehandObserveHandler } from "./handlers/observeHandler";
 import { LLMClient } from "./llm/LLMClient";
 import { LLMProvider } from "./llm/LLMProvider";
 import { logLineToString } from "./utils";
+import path from "path";
 
 require("dotenv").config({ path: ".env" });
 
@@ -197,8 +198,13 @@ async function getBrowser(
       },
     });
 
-    const tmpDir = fs.mkdtempSync("/tmp/pwtest");
-    fs.mkdirSync(`${tmpDir}/userdir/Default`, { recursive: true });
+    const tmpDirPath = path.join(process.cwd(), "tmp");
+    if (!fs.existsSync(tmpDirPath)) {
+      fs.mkdirSync(tmpDirPath, { recursive: true });
+    }
+
+    const tmpDir = fs.mkdtempSync(path.join(tmpDirPath, "ctx_"));
+    fs.mkdirSync(path.join(tmpDir, "userdir/Default"), { recursive: true });
 
     const defaultPreferences = {
       plugins: {
@@ -230,9 +236,8 @@ async function getBrowser(
           "--enable-webgl",
           "--use-gl=swiftshader",
           "--enable-accelerated-2d-canvas",
-          "--disable-blink-features=AutomationControlled",
-          "--disable-web-security",
         ],
+        ignoreDefaultArgs: ["--enable-automation"],
         bypassCSP: true,
       },
     );
@@ -249,39 +254,41 @@ async function getBrowser(
 }
 
 async function applyStealthScripts(context: BrowserContext) {
-  await context.addInitScript(() => {
-    // Override the navigator.webdriver property
-    Object.defineProperty(navigator, "webdriver", {
-      get: () => undefined,
+  context.on("page", async (page) => {
+    await page.evaluate(() => {
+      // Override the navigator.webdriver property
+      Object.defineProperty(navigator, "webdriver", {
+        get: () => undefined,
+      });
+
+      // Mock languages and plugins to mimic a real browser
+      Object.defineProperty(navigator, "languages", {
+        get: () => ["en-US", "en"],
+      });
+
+      Object.defineProperty(navigator, "plugins", {
+        get: () => [1, 2, 3, 4, 5],
+      });
+
+      // Remove Playwright-specific properties
+      delete (window as any).__playwright;
+      delete (window as any).__pw_manual;
+      delete (window as any).__PW_inspect;
+
+      // Redefine the headless property
+      Object.defineProperty(navigator, "headless", {
+        get: () => false,
+      });
+
+      // Override the permissions API
+      const originalQuery = window.navigator.permissions.query;
+      window.navigator.permissions.query = (parameters: any) =>
+        parameters.name === "notifications"
+          ? Promise.resolve({
+              state: Notification.permission,
+            } as PermissionStatus)
+          : originalQuery(parameters);
     });
-
-    // Mock languages and plugins to mimic a real browser
-    Object.defineProperty(navigator, "languages", {
-      get: () => ["en-US", "en"],
-    });
-
-    Object.defineProperty(navigator, "plugins", {
-      get: () => [1, 2, 3, 4, 5],
-    });
-
-    // Remove Playwright-specific properties
-    delete (window as any).__playwright;
-    delete (window as any).__pw_manual;
-    delete (window as any).__PW_inspect;
-
-    // Redefine the headless property
-    Object.defineProperty(navigator, "headless", {
-      get: () => false,
-    });
-
-    // Override the permissions API
-    const originalQuery = window.navigator.permissions.query;
-    window.navigator.permissions.query = (parameters: any) =>
-      parameters.name === "notifications"
-        ? Promise.resolve({
-            state: Notification.permission,
-          } as PermissionStatus)
-        : originalQuery(parameters);
   });
 }
 
