@@ -7,7 +7,6 @@ async function example() {
     verbose: 1,
     debugDom: true,
     enableCaching: false,
-    modelName: "claude-3-5-sonnet-latest",
   });
 
   await stagehand.init();
