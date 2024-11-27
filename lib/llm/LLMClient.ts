@@ -1,8 +1,10 @@
+import { ChatCompletionToolChoiceOption } from "openai/resources";
 import { AvailableModel, ToolCall } from "../../types/model";
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
   content: ChatMessageContent;
+  name?: string;
 }
 
 export type ChatMessageContent =
@@ -16,7 +18,7 @@ export interface ChatMessageImageContent {
 }
 
 export interface ChatMessageTextContent {
-  type: string;
+  type: Exclude<string, "image_url">;
   text: string;
 }
 
@@ -47,7 +49,7 @@ export interface ChatCompletionOptions {
     schema: any;
   };
   tools?: ToolCall[];
-  tool_choice?: string;
+  tool_choice?: ChatCompletionToolChoiceOption;
   maxTokens?: number;
   requestId: string;
 }

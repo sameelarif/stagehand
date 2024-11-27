@@ -112,7 +112,7 @@ export async function act({
     top_p: 1,
     frequency_penalty: 0,
     presence_penalty: 0,
-    tool_choice: "auto" as const,
+    tool_choice: "auto",
     tools: actTools,
     image: screenshot
       ? { buffer: screenshot, description: AnnotatedScreenshotText }
