@@ -2,6 +2,7 @@ import { Browserbase } from "@browserbasehq/sdk";
 import { type BrowserContext, chromium, type Page } from "@playwright/test";
 import { randomUUID } from "crypto";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { z } from "zod";
 import { BrowserResult } from "../types/browser";
@@ -197,7 +198,7 @@ async function getBrowser(
       },
     });
 
-    const tmpDirPath = path.join(process.cwd(), "tmp");
+    const tmpDirPath = path.join(os.tmpdir(), "ctx_");
     if (!fs.existsSync(tmpDirPath)) {
       fs.mkdirSync(tmpDirPath, { recursive: true });
     }
