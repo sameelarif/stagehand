@@ -2,6 +2,7 @@ import { Browserbase } from "@browserbasehq/sdk";
 import { type BrowserContext, chromium, type Page } from "@playwright/test";
 import { randomUUID } from "crypto";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { z } from "zod";
 import { BrowserResult } from "../types/browser";
@@ -197,13 +198,15 @@ async function getBrowser(
       },
     });
 
-    const tmpDirPath = path.join(process.cwd(), "tmp");
+    const tmpDirPath = path.join(os.tmpdir(), "tmp");
     if (!fs.existsSync(tmpDirPath)) {
       fs.mkdirSync(tmpDirPath, { recursive: true });
     }
 
     const tmpDir = fs.mkdtempSync(path.join(tmpDirPath, "ctx_"));
     fs.mkdirSync(path.join(tmpDir, "userdir/Default"), { recursive: true });
+
+    this.tmpDir = tmpDir;
 
     const defaultPreferences = {
       plugins: {
@@ -248,6 +251,11 @@ async function getBrowser(
     });
 
     await applyStealthScripts(context);
+
+    // context.on("close", () => {
+    //   fs.rmSync(this.tmpDir, { recursive: true, force: true });
+    //   console.log("Temporary directory deleted:", this.tmpDir);
+    // });
 
     return { context };
   }
@@ -312,6 +320,8 @@ export class Stagehand {
   private actHandler?: StagehandActHandler;
   private extractHandler?: StagehandExtractHandler;
   private observeHandler?: StagehandObserveHandler;
+
+  private tmpDir: string;
 
   constructor(
     {
@@ -875,5 +885,16 @@ export class Stagehand {
 
         throw e;
       });
+  }
+
+  async close() {
+    await this.context.close();
+
+    try {
+      fs.rmSync(this.tmpDir, { recursive: true, force: true });
+      console.log("Temporary directory deleted:", this.tmpDir);
+    } catch (e) {
+      console.error("Error deleting temporary directory:", e);
+    }
   }
 }
