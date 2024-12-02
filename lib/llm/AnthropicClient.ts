@@ -1,5 +1,9 @@
 import Anthropic, { ClientOptions } from "@anthropic-ai/sdk";
-import { Message, MessageCreateParams } from "@anthropic-ai/sdk/resources";
+import {
+  MessageParam,
+  TextBlockParam,
+  Tool,
+} from "@anthropic-ai/sdk/resources";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { LogLine } from "../../types/log";
 import {
@@ -103,13 +107,39 @@ export class AnthropicClient extends LLMClient {
       }
     }
 
-    const systemMessage = options.messages.find((msg) => msg.role === "system");
+    const systemMessage = options.messages.find(
+      (msg) =>
+        msg.role === "system" &&
+        (typeof msg.content === "string" ||
+          (Array.isArray(msg.content) &&
+            msg.content.every((content) => content.type !== "image_url"))),
+    );
     const userMessages = options.messages.filter(
       (msg) => msg.role !== "system",
     );
 
+    const formattedMessages: MessageParam[] = userMessages.map((msg) => {
+      if (typeof msg.content === "string") {
+        return {
+          role: msg.role as "user" | "assistant", // ensure its not checking for system types
+          content: msg.content,
+        };
+      } else {
+        return {
+          role: msg.role as "user" | "assistant",
+          content: msg.content.map((content) => {
+            if (content.type === "text") {
+              return { type: "text", text: content.text };
+            }
+
+            // don't handle image content for now
+          }),
+        };
+      }
+    });
+
     if (options.image) {
-      const screenshotMessage: any = {
+      const screenshotMessage: MessageParam = {
         role: "user",
         content: [
           {
@@ -120,17 +150,23 @@ export class AnthropicClient extends LLMClient {
               data: options.image.buffer.toString("base64"),
             },
           },
-          ...(options.image.description
-            ? [{ type: "text", text: options.image.description }]
-            : []),
         ],
       };
 
-      options.messages = [...options.messages, screenshotMessage];
+      if (
+        options.image.description &&
+        Array.isArray(screenshotMessage.content)
+      ) {
+        screenshotMessage.content.push({
+          type: "text",
+          text: options.image.description,
+        });
+      }
+
+      formattedMessages.push(screenshotMessage);
     }
 
-    // Transform tools to Anthropic's format
-    let anthropicTools = options.tools?.map((tool: any) => {
+    let anthropicTools: Tool[] = options.tools?.map((tool) => {
       if (tool.type === "function") {
         return {
           name: tool.function.name,
@@ -142,22 +178,20 @@ export class AnthropicClient extends LLMClient {
           },
         };
       }
-      return tool;
     });
 
-    let toolDefinition;
+    let toolDefinition: Tool | undefined;
     if (options.response_model) {
       const jsonSchema = zodToJsonSchema(options.response_model.schema);
-
       // Extract the actual schema properties
       // TODO (kamath): fix this forced typecast
       const schemaProperties =
         (
           jsonSchema.definitions?.MySchema as {
-            properties?: Record<string, any>;
+            properties?: Record<string, unknown>;
           }
         )?.properties ||
-        (jsonSchema as { properties?: Record<string, any> }).properties;
+        (jsonSchema as { properties?: Record<string, unknown> }).properties;
       const schemaRequired =
         (jsonSchema.definitions?.MySchema as { required?: string[] })
           ?.required || (jsonSchema as { required?: string[] }).required;
@@ -178,17 +212,16 @@ export class AnthropicClient extends LLMClient {
       anthropicTools.push(toolDefinition);
     }
 
-    const response = (await this.client.messages.create({
+    const response = await this.client.messages.create({
       model: this.modelName,
-      max_tokens: options.maxTokens || 3000,
-      messages: userMessages.map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-      })),
+      max_tokens: options.maxTokens || 1500,
+      messages: formattedMessages,
       tools: anthropicTools,
-      system: systemMessage?.content,
+      system: systemMessage
+        ? (systemMessage.content as string | TextBlockParam[]) // we can cast because we already filtered out image content
+        : undefined,
       temperature: options.temperature,
-    } as MessageCreateParams)) as Message; // TODO (kamath): remove this forced typecast
+    });
 
     this.logger({
       category: "anthropic",
@@ -266,7 +299,7 @@ export class AnthropicClient extends LLMClient {
           this.cache.set(cacheOptions, result, options.requestId);
         }
 
-        return result;
+        return result as AnthropicTransformedResponse;
       } else {
         if (!options.retries || options.retries < 5) {
           return this.createChatCompletion({

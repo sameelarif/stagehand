@@ -1,5 +1,4 @@
 import type { ClientOptions as AnthropicClientOptions } from "@anthropic-ai/sdk";
-import { Tool as AnthropicTool } from "@anthropic-ai/sdk/resources";
 import type { ClientOptions as OpenAIClientOptions } from "openai";
 import { ChatCompletionTool as OpenAITool } from "openai/resources";
 
@@ -15,7 +14,7 @@ export type ModelProvider = "openai" | "anthropic";
 
 export type ClientOptions = OpenAIClientOptions | AnthropicClientOptions;
 
-export type ToolCall = AnthropicTool | OpenAITool;
+export type ToolCall = OpenAITool;
 
 export type AnthropicTransformedResponse = {
   id: string;
