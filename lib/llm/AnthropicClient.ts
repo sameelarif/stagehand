@@ -2,7 +2,10 @@ import Anthropic, { ClientOptions } from "@anthropic-ai/sdk";
 import { Message, MessageCreateParams } from "@anthropic-ai/sdk/resources";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { LogLine } from "../../types/log";
-import { AvailableModel } from "../../types/model";
+import {
+  AnthropicTransformedResponse,
+  AvailableModel,
+} from "../../types/model";
 import { LLMCache } from "../cache/LLMCache";
 import { ChatCompletionOptions, LLMClient } from "./LLMClient";
 
@@ -29,9 +32,10 @@ export class AnthropicClient extends LLMClient {
 
   async createChatCompletion(
     options: ChatCompletionOptions & { retries?: number },
-  ): Promise<any> {
-    // TODO (kamath): remove this forced typecast
-    const { image: _, ...optionsWithoutImage } = options;
+  ): Promise<AnthropicTransformedResponse> {
+    const optionsWithoutImage = { ...options };
+    delete optionsWithoutImage.image;
+
     this.logger({
       category: "anthropic",
       message: "creating chat completion",
@@ -203,7 +207,8 @@ export class AnthropicClient extends LLMClient {
     });
 
     // Parse the response here
-    const transformedResponse = {
+
+    const transformedResponse: AnthropicTransformedResponse = {
       id: response.id,
       object: "chat.completion",
       created: Date.now(),
@@ -217,7 +222,7 @@ export class AnthropicClient extends LLMClient {
               response.content.find((c) => c.type === "text")?.text || null,
             tool_calls: response.content
               .filter((c) => c.type === "tool_use")
-              .map((toolUse: any) => ({
+              .map((toolUse) => ({
                 id: toolUse.id,
                 type: "function",
                 function: {

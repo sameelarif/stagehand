@@ -1,6 +1,9 @@
 import OpenAI, { ClientOptions } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
-import { ChatCompletionCreateParamsNonStreaming } from "openai/resources/chat";
+import {
+  ChatCompletion,
+  ChatCompletionCreateParamsNonStreaming,
+} from "openai/resources/chat";
 import { LogLine } from "../../types/log";
 import { AvailableModel } from "../../types/model";
 import { LLMCache } from "../cache/LLMCache";
@@ -28,8 +31,11 @@ export class OpenAIClient extends LLMClient {
     this.modelName = modelName;
   }
 
-  async createChatCompletion(options: ChatCompletionOptions) {
-    const { image: _, ...optionsWithoutImage } = options;
+  async createChatCompletion(
+    options: ChatCompletionOptions,
+  ): Promise<ChatCompletion> {
+    const optionsWithoutImage = { ...options };
+    delete optionsWithoutImage.image;
     this.logger({
       category: "openai",
       message: "creating chat completion",
@@ -113,7 +119,7 @@ export class OpenAIClient extends LLMClient {
       options.messages = [...options.messages, screenshotMessage];
     }
 
-    const { image, response_model, requestId, ...openAiOptions } = {
+    const { response_model, ...openAiOptions } = {
       ...options,
       model: this.modelName,
     };
