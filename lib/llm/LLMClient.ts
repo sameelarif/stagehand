@@ -4,7 +4,10 @@ import {
   AvailableModel,
   ToolCall,
 } from "../../types/model";
-import { ChatCompletion } from "openai/resources";
+import {
+  ChatCompletion,
+  ChatCompletionToolChoiceOption,
+} from "openai/resources";
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -53,7 +56,7 @@ export interface ChatCompletionOptions {
     schema: ZodType;
   };
   tools?: ToolCall[];
-  tool_choice?: string;
+  tool_choice?: "auto" | ChatCompletionToolChoiceOption;
   maxTokens?: number;
   requestId: string;
 }
