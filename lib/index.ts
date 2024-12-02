@@ -880,7 +880,7 @@ export class Stagehand {
       });
   }
 
-  async close() {
+  async close(): Promise<void> {
     await this.context.close();
 
     if (this.contextPath) {
