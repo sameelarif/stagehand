@@ -204,7 +204,7 @@ async function getBrowser(
       },
     });
 
-    const tmpDirPath = path.join(os.tmpdir(), "ctx_");
+    const tmpDirPath = path.join(os.tmpdir(), "stagehand");
     if (!fs.existsSync(tmpDirPath)) {
       fs.mkdirSync(tmpDirPath, { recursive: true });
     }
@@ -256,7 +256,7 @@ async function getBrowser(
 
     await applyStealthScripts(context);
 
-    return { context };
+    return { context, contextPath: tmpDir };
   }
 }
 
@@ -315,6 +315,7 @@ export class Stagehand {
   private enableCaching: boolean;
   private variables: { [key: string]: unknown };
   private browserbaseResumeSessionID?: string;
+  private contextPath?: string;
 
   private actHandler?: StagehandActHandler;
   private extractHandler?: StagehandExtractHandler;
@@ -370,7 +371,7 @@ export class Stagehand {
     const llmClient = modelName
       ? this.llmProvider.getClient(modelName, modelClientOptions)
       : this.llmClient;
-    const { context, debugUrl, sessionUrl } = await getBrowser(
+    const { context, debugUrl, sessionUrl, contextPath } = await getBrowser(
       this.apiKey,
       this.projectId,
       this.env,
@@ -386,6 +387,7 @@ export class Stagehand {
         sessionUrl: undefined,
       } as BrowserResult;
     });
+    this.contextPath = contextPath;
     this.context = context;
     this.page = context.pages()[0];
     // Redundant but needed for users who are re-connecting to a previously-created session
@@ -883,4 +885,22 @@ export class Stagehand {
         throw e;
       });
   }
+
+  async close(): Promise<void> {
+    await this.context.close();
+
+    if (this.contextPath) {
+      try {
+        fs.rmSync(this.contextPath, { recursive: true, force: true });
+      } catch (e) {
+        console.error("Error deleting context directory:", e);
+      }
+    }
+  }
 }
+
+export * from "../types/browser";
+export * from "../types/log";
+export * from "../types/model";
+export * from "../types/playwright";
+export * from "../types/stagehand";
