@@ -97,11 +97,14 @@ export class StagehandObserveHandler {
 
     await this.waitForSettledDom(domSettleTimeoutMs);
     await this.startDomDebug();
-    const { outputString, selectorMap } = await this.stagehand.page.evaluate(
+    const evalResult = await this.stagehand.page.evaluate(
       (fullPage: boolean) =>
         fullPage ? window.processAllOfDom() : window.processDom([]),
       fullPage,
     );
+
+    const { selectorMap } = evalResult;
+    let { outputString } = evalResult;
 
     let annotatedScreenshot: Buffer | undefined;
     if (useVision === true) {

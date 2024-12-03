@@ -34,9 +34,9 @@ export class OpenAIClient extends LLMClient {
     this.modelName = modelName;
   }
 
-  async createChatCompletion(
+  async createChatCompletion<T = ChatCompletion>(
     options: ChatCompletionOptions,
-  ): Promise<ChatCompletion> {
+  ): Promise<T> {
     const optionsWithoutImage = { ...options };
     delete optionsWithoutImage.image;
     this.logger({
@@ -247,6 +247,6 @@ export class OpenAIClient extends LLMClient {
       this.cache.set(cacheOptions, response, options.requestId);
     }
 
-    return response;
+    return response as T;
   }
 }

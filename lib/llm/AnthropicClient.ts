@@ -34,9 +34,9 @@ export class AnthropicClient extends LLMClient {
     this.modelName = modelName;
   }
 
-  async createChatCompletion(
+  async createChatCompletion<T = AnthropicTransformedResponse>(
     options: ChatCompletionOptions & { retries?: number },
-  ): Promise<AnthropicTransformedResponse> {
+  ): Promise<T> {
     const optionsWithoutImage = { ...options };
     delete optionsWithoutImage.image;
 
@@ -87,7 +87,7 @@ export class AnthropicClient extends LLMClient {
             },
           },
         });
-        return cachedResponse;
+        return cachedResponse as T;
       } else {
         this.logger({
           category: "llm_cache",
@@ -299,7 +299,7 @@ export class AnthropicClient extends LLMClient {
           this.cache.set(cacheOptions, result, options.requestId);
         }
 
-        return result as AnthropicTransformedResponse;
+        return result as T;
       } else {
         if (!options.retries || options.retries < 5) {
           return this.createChatCompletion({
@@ -347,6 +347,6 @@ export class AnthropicClient extends LLMClient {
       });
     }
 
-    return transformedResponse;
+    return transformedResponse as T;
   }
 }

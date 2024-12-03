@@ -1,10 +1,5 @@
 import { Browserbase } from "@browserbasehq/sdk";
-import {
-  type BrowserContext,
-  chromium,
-  type Page,
-  type GotoOptions,
-} from "@playwright/test";
+import { type BrowserContext, chromium, type Page } from "@playwright/test";
 import { randomUUID } from "crypto";
 import dotenv from "dotenv";
 import fs from "fs";
@@ -13,6 +8,7 @@ import path from "path";
 import { z } from "zod";
 import { BrowserResult } from "../types/browser";
 import { LogLine } from "../types/log";
+import { GotoOptions } from "../types/playwright";
 import {
   ActOptions,
   ActResult,
@@ -397,7 +393,7 @@ export class Stagehand {
 
     // Overload the page.goto method
     const originalGoto = this.page.goto.bind(this.page);
-    this.page.goto = async (url: string, options?: GotoOptions) => {
+    this.page.goto = async (url: string, options) => {
       const result = await originalGoto(url, options);
       if (this.debugDom) {
         await this.page.evaluate(() => (window.showChunks = this.debugDom));
