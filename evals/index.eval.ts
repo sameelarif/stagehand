@@ -1529,10 +1529,10 @@ const tasks: Record<string, EvalFunction> = {
   extract_press_releases,
 };
 
-interface EvalArgs<TInput, TOutput> {
+interface EvalArgs<TInput, TOutput, TExpected> {
   input: TInput;
   output: TOutput;
-  expected: unknown;
+  expected: TExpected;
   metadata?: { model: AvailableModel; test: string };
 }
 
