@@ -1,5 +1,5 @@
 ---
-"@browserbasehq/stagehand": patch
+"@browserbasehq/stagehand": minor
 ---
 
 clean up contexts after use
