@@ -20,9 +20,9 @@ export class LLMCache extends BaseCache<CacheEntry> {
    * @returns The cached data if available, otherwise null.
    */
   public async get(
-    options: Record<string, any>,
+    options: Record<string, unknown>,
     requestId: string,
-  ): Promise<any | null> {
+  ): Promise<unknown | null> {
     const data = await super.get(options, requestId);
     return data;
   }
@@ -34,8 +34,8 @@ export class LLMCache extends BaseCache<CacheEntry> {
    * @param requestId - The identifier for the current request.
    */
   public async set(
-    options: Record<string, any>,
-    data: any,
+    options: Record<string, unknown>,
+    data: unknown,
     requestId: string,
   ): Promise<void> {
     await super.set(options, data, requestId);

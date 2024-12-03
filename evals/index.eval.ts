@@ -51,7 +51,7 @@ type EvalFunction = (args: {
   logs: LogLine[];
   debugUrl: string;
   sessionUrl: string;
-  error?: any;
+  error?: unknown;
 }>;
 
 const expedia: EvalFunction = async ({ modelName, logger }) => {
@@ -1526,24 +1526,43 @@ const tasks: Record<string, EvalFunction> = {
   arxiv,
   expedia,
   amazon_add_to_cart,
-  extract_press_releases
+  extract_press_releases,
 };
 
-const exactMatch = (args: {
-  input: any;
-  output: any;
-  expected?: any;
-}): {
+interface EvalArgs<TInput, TOutput> {
+  input: TInput;
+  output: TOutput;
+  expected: unknown;
+  metadata?: { model: AvailableModel; test: string };
+}
+
+interface EvalResult {
   name: string;
   score: number;
-} => {
+}
+
+interface EvalInput {
+  name: string;
+  modelName: AvailableModel;
+}
+
+const exactMatch = (
+  args: EvalArgs<EvalInput, boolean | { _success: boolean }, unknown>,
+): EvalResult => {
   console.log(`Task "${args.input.name}" returned: ${args.output}`);
 
   const expected = args.expected ?? true;
   if (expected === true) {
     return {
       name: "Exact match",
-      score: args.output === true || args.output?._success == true ? 1 : 0,
+      score:
+        typeof args.output === "boolean"
+          ? args.output
+            ? 1
+            : 0
+          : args.output._success
+            ? 1
+            : 0,
     };
   }
 
@@ -1553,19 +1572,21 @@ const exactMatch = (args: {
   };
 };
 
-const errorMatch = (args: {
-  input: any;
-  output: any;
-  expected?: any;
-}): {
-  name: string;
-  score: number;
-} => {
+const errorMatch = (
+  args: EvalArgs<
+    EvalInput,
+    boolean | { _success: boolean; error?: unknown },
+    unknown
+  >,
+): EvalResult => {
   console.log(`Task "${args.input.name}" returned: ${args.output}`);
 
   return {
     name: "Error rate",
-    score: args.output?.error !== undefined ? 1 : 0,
+    score:
+      typeof args.output === "object" && args.output.error !== undefined
+        ? 1
+        : 0,
   };
 };
 
@@ -1585,17 +1606,26 @@ const testcases = [
   "laroche_form",
   "arxiv",
   "amazon_add_to_cart",
-  "extract_press_releases"
+  "extract_press_releases",
   // "expedia"
 ];
 
-const generateSummary = async (summary: any, results: any[]) => {
+const generateSummary = async (
+  summary: { scores?: Record<string, { score: number | null }> },
+  results: Array<{
+    input: EvalInput;
+    output?: boolean | { _success: boolean };
+  }>,
+) => {
   const exactMatch = summary.scores?.["Exact match"] || { score: null };
 
   const taskStatuses = results.map((result) => ({
     name: result.input.name,
     modelName: result.input.modelName,
-    success: result.output?._success || false,
+    success:
+      typeof result.output === "boolean"
+        ? result.output
+        : result.output?._success || false,
   }));
 
   const totalTasks = taskStatuses.length;
@@ -1614,7 +1644,10 @@ const generateSummary = async (summary: any, results: any[]) => {
     failedTasks,
   };
 
-  fs.writeFileSync("eval-summary.json", JSON.stringify(formattedSummary, null, 2));
+  fs.writeFileSync(
+    "eval-summary.json",
+    JSON.stringify(formattedSummary, null, 2),
+  );
   console.log("Evaluation summary written to eval-summary.json");
 };
 
@@ -1636,6 +1669,7 @@ const filter = args[0];
               model,
               test,
             },
+            expected: true,
           })),
         );
 
@@ -1705,4 +1739,3 @@ const filter = args[0];
     process.exit(1);
   }
 })();
-
