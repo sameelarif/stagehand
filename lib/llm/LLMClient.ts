@@ -72,8 +72,8 @@ export abstract class LLMClient {
     this.hasVision = modelsWithVision.includes(modelName);
   }
 
-  abstract createChatCompletion(
+  abstract createChatCompletion<T = LLMResponse>(
     options: ChatCompletionOptions,
-  ): Promise<LLMResponse>;
+  ): Promise<T>;
   abstract logger: (message: { category?: string; message: string }) => void;
 }
