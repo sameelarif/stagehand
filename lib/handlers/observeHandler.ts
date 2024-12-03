@@ -97,7 +97,7 @@ export class StagehandObserveHandler {
 
     await this.waitForSettledDom(domSettleTimeoutMs);
     await this.startDomDebug();
-    let { outputString, selectorMap } = await this.stagehand.page.evaluate(
+    const { outputString, selectorMap } = await this.stagehand.page.evaluate(
       (fullPage: boolean) =>
         fullPage ? window.processAllOfDom() : window.processDom([]),
       fullPage,

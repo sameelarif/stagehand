@@ -1,5 +1,10 @@
 import { Browserbase } from "@browserbasehq/sdk";
-import { type BrowserContext, chromium, type Page } from "@playwright/test";
+import {
+  type BrowserContext,
+  chromium,
+  type Page,
+  type GotoOptions,
+} from "@playwright/test";
 import { randomUUID } from "crypto";
 import dotenv from "dotenv";
 import fs from "fs";
@@ -283,7 +288,7 @@ async function applyStealthScripts(context: BrowserContext) {
 
     // Override the permissions API
     const originalQuery = window.navigator.permissions.query;
-    window.navigator.permissions.query = (parameters: any) =>
+    window.navigator.permissions.query = (parameters) =>
       parameters.name === "notifications"
         ? Promise.resolve({
             state: Notification.permission,
@@ -308,7 +313,7 @@ export class Stagehand {
   private domSettleTimeoutMs: number;
   private browserBaseSessionCreateParams?: Browserbase.Sessions.SessionCreateParams;
   private enableCaching: boolean;
-  private variables: { [key: string]: any };
+  private variables: { [key: string]: unknown };
   private browserbaseResumeSessionID?: string;
 
   private actHandler?: StagehandActHandler;
@@ -390,7 +395,7 @@ export class Stagehand {
 
     // Overload the page.goto method
     const originalGoto = this.page.goto.bind(this.page);
-    this.page.goto = async (url: string, options?: any) => {
+    this.page.goto = async (url: string, options?: GotoOptions) => {
       const result = await originalGoto(url, options);
       if (this.debugDom) {
         await this.page.evaluate(() => (window.showChunks = this.debugDom));
@@ -459,7 +464,7 @@ export class Stagehand {
       : this.llmClient;
 
     const originalGoto = this.page.goto.bind(this.page);
-    this.page.goto = async (url: string, options?: any) => {
+    this.page.goto = async (url: string, options?: GotoOptions) => {
       const result = await originalGoto(url, options);
       if (this.debugDom) {
         await this.page.evaluate(() => (window.showChunks = this.debugDom));
@@ -543,7 +548,7 @@ export class Stagehand {
               (log) => log.id !== logObj.id,
             );
         })
-        .catch((e) => {
+        .catch(() => {
           // NAVIDTODO: Rerun the log call on the new page
           // This is expected to happen when the user is changing pages
           // console.error("Logging Error:", e);
@@ -556,7 +561,7 @@ export class Stagehand {
       const timeout = timeoutMs ?? this.domSettleTimeoutMs;
       let timeoutHandle: NodeJS.Timeout;
 
-      const timeoutPromise = new Promise<void>((resolve, reject) => {
+      const timeoutPromise = new Promise<void>((resolve) => {
         timeoutHandle = setTimeout(() => {
           this.log({
             category: "dom",
