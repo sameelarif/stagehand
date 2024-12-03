@@ -1,58 +1,18 @@
 import { Eval } from "braintrust";
-import { Stagehand } from "../lib";
-import { z } from "zod";
-import process from "process";
-import { EvalLogger } from "./utils";
-import { AvailableModel } from "../types/model";
-import { LogLine } from "../types/log";
 import fs from "fs";
-
+import process from "process";
+import { z } from "zod";
+import { AvailableModel } from "../types/model";
+import { EvalLogger } from "./utils";
+import { simple_google_search } from "./act/simple_google_search";
+import { EvalFunction } from "../types/evals";
+import { initStagehand } from "./utils";
 const env: "BROWSERBASE" | "LOCAL" =
   process.env.EVAL_ENV?.toLowerCase() === "browserbase"
     ? "BROWSERBASE"
     : "LOCAL";
 
-const enableCaching = process.env.EVAL_ENABLE_CACHING?.toLowerCase() === "true";
 const models: AvailableModel[] = ["gpt-4o", "claude-3-5-sonnet-20241022"];
-
-const defaultStagehandOptions = {
-  env,
-  headless: false,
-  verbose: 2 as const,
-  debugDom: true,
-  enableCaching,
-};
-
-const initStagehand = async ({
-  modelName,
-  domSettleTimeoutMs,
-  logger,
-}: {
-  modelName: AvailableModel;
-  domSettleTimeoutMs?: number;
-  logger: EvalLogger;
-}) => {
-  const stagehand = new Stagehand({
-    ...defaultStagehandOptions,
-    logger: (logLine: LogLine) => {
-      logger.log(logLine);
-    },
-  });
-  logger.init(stagehand);
-  const initResponse = await stagehand.init({ modelName, domSettleTimeoutMs });
-  return { stagehand, logger, initResponse };
-};
-
-type EvalFunction = (args: {
-  modelName: AvailableModel;
-  logger: EvalLogger;
-}) => Promise<{
-  _success: boolean;
-  logs: LogLine[];
-  debugUrl: string;
-  sessionUrl: string;
-  error?: any;
-}>;
 
 const expedia: EvalFunction = async ({ modelName, logger }) => {
   const { stagehand, initResponse } = await initStagehand({
@@ -196,34 +156,6 @@ const vanta_h: EvalFunction = async ({ modelName, logger }) => {
   return {
     _success: observations.length === 0,
     observations,
-    debugUrl,
-    sessionUrl,
-    logs: logger.getLogs(),
-  };
-};
-
-const simple_google_search: EvalFunction = async ({ modelName, logger }) => {
-  const { stagehand, initResponse } = await initStagehand({
-    modelName,
-    logger,
-  });
-
-  const { debugUrl, sessionUrl } = initResponse;
-
-  await stagehand.page.goto("https://www.google.com");
-
-  await stagehand.act({
-    action: 'Search for "OpenAI"',
-  });
-
-  const expectedUrl = "https://www.google.com/search?q=OpenAI";
-  const currentUrl = stagehand.page.url();
-
-  await stagehand.context.close();
-
-  return {
-    _success: currentUrl.startsWith(expectedUrl),
-    currentUrl,
     debugUrl,
     sessionUrl,
     logs: logger.getLogs(),
@@ -1526,7 +1458,7 @@ const tasks: Record<string, EvalFunction> = {
   arxiv,
   expedia,
   amazon_add_to_cart,
-  extract_press_releases
+  extract_press_releases,
 };
 
 const exactMatch = (args: {
@@ -1585,7 +1517,7 @@ const testcases = [
   "laroche_form",
   "arxiv",
   "amazon_add_to_cart",
-  "extract_press_releases"
+  "extract_press_releases",
   // "expedia"
 ];
 
@@ -1614,7 +1546,10 @@ const generateSummary = async (summary: any, results: any[]) => {
     failedTasks,
   };
 
-  fs.writeFileSync("eval-summary.json", JSON.stringify(formattedSummary, null, 2));
+  fs.writeFileSync(
+    "eval-summary.json",
+    JSON.stringify(formattedSummary, null, 2),
+  );
   console.log("Evaluation summary written to eval-summary.json");
 };
 
@@ -1705,4 +1640,3 @@ const filter = args[0];
     process.exit(1);
   }
 })();
-

@@ -1,6 +1,41 @@
-import { Stagehand } from "../lib";
+import { AvailableModel, Stagehand } from "../lib";
 import { logLineToString } from "../lib/utils";
 import { LogLine } from "../types/log";
+
+const env: "BROWSERBASE" | "LOCAL" =
+  process.env.EVAL_ENV?.toLowerCase() === "browserbase"
+    ? "BROWSERBASE"
+    : "LOCAL";
+
+const enableCaching = process.env.EVAL_ENABLE_CACHING?.toLowerCase() === "true";
+
+const defaultStagehandOptions = {
+  env,
+  headless: false,
+  verbose: 2 as const,
+  debugDom: true,
+  enableCaching,
+};
+
+export const initStagehand = async ({
+  modelName,
+  domSettleTimeoutMs,
+  logger,
+}: {
+  modelName: AvailableModel;
+  domSettleTimeoutMs?: number;
+  logger: EvalLogger;
+}) => {
+  const stagehand = new Stagehand({
+    ...defaultStagehandOptions,
+    logger: (logLine: LogLine) => {
+      logger.log(logLine);
+    },
+  });
+  logger.init(stagehand);
+  const initResponse = await stagehand.init({ modelName, domSettleTimeoutMs });
+  return { stagehand, logger, initResponse };
+};
 
 type LogLineEval = LogLine & {
   parsedAuxiliary?: string | object;
