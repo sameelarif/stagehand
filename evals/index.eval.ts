@@ -1514,6 +1514,7 @@ const tasks: Record<string, EvalFunction> = {
   peeler_simple,
   peeler_complex,
   wikipedia,
+  nonsense_action,
   simple_google_search,
   extract_github_stars,
   extract_collaborators_from_github_repository,
