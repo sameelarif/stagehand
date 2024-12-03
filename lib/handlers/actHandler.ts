@@ -1244,7 +1244,7 @@ export class StagehandActHandler {
         }
         await this._performPlaywrightMethod(
           method,
-          args.map((arg) => arg.toString()),
+          args,
           xpaths[0],
           domSettleTimeoutMs,
         );
