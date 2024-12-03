@@ -1,6 +1,7 @@
 import { Browserbase } from "@browserbasehq/sdk";
 import { type BrowserContext, chromium, type Page } from "@playwright/test";
 import { randomUUID } from "crypto";
+import dotenv from "dotenv";
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -28,7 +29,7 @@ import { LLMClient } from "./llm/LLMClient";
 import { LLMProvider } from "./llm/LLMProvider";
 import { logLineToString } from "./utils";
 
-require("dotenv").config({ path: ".env" });
+dotenv.config({ path: ".env" });
 
 const DEFAULT_MODEL_NAME = "gpt-4o";
 
@@ -271,9 +272,9 @@ async function applyStealthScripts(context: BrowserContext) {
     });
 
     // Remove Playwright-specific properties
-    delete (window as any).__playwright;
-    delete (window as any).__pw_manual;
-    delete (window as any).__PW_inspect;
+    delete window.__playwright;
+    delete window.__pw_manual;
+    delete window.__PW_inspect;
 
     // Redefine the headless property
     Object.defineProperty(navigator, "headless", {

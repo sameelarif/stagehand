@@ -148,6 +148,7 @@ export class OpenAIClient extends LLMClient {
     });
 
     delete openAiOptions.requestId;
+    delete openAiOptions.image;
 
     const formattedMessages: ChatCompletionMessageParam[] =
       options.messages.map((message) => {

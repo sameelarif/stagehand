@@ -151,7 +151,6 @@ export async function act({
 
 export async function extract({
   instruction,
-  progress,
   previouslyExtractedContent,
   domElements,
   schema,
@@ -161,10 +160,9 @@ export async function extract({
   requestId,
 }: {
   instruction: string;
-  progress: string;
-  previouslyExtractedContent: any;
+  previouslyExtractedContent: object;
   domElements: string;
-  schema: z.ZodObject<any>;
+  schema: z.ZodObject<z.ZodRawShape>;
   llmClient: LLMClient;
   chunksSeen: number;
   chunksTotal: number;
