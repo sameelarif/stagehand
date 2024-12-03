@@ -1,3 +1,5 @@
+import { calculateViewportHeight } from "./utils";
+
 export async function debugDom() {
   window.chunkNumber = 0;
 
@@ -83,7 +85,7 @@ function cleanupNav() {
 }
 
 function setupChunkNav() {
-  const viewportHeight = window.innerHeight;
+  const viewportHeight = calculateViewportHeight();
   const documentHeight = document.documentElement.scrollHeight;
   const totalChunks = Math.ceil(documentHeight / viewportHeight);
 
@@ -102,7 +104,7 @@ function setupChunkNav() {
       cleanupMarkers();
       cleanupNav();
       window.chunkNumber -= 1;
-      window.scrollTo(0, window.chunkNumber * window.innerHeight);
+      window.scrollTo(0, window.chunkNumber * viewportHeight);
       await window.waitForDomSettle();
       const { selectorMap: multiSelectorMap } = await window.processElements(
         window.chunkNumber,
@@ -129,7 +131,7 @@ function setupChunkNav() {
       cleanupMarkers();
       cleanupNav();
       window.chunkNumber += 1;
-      window.scrollTo(0, window.chunkNumber * window.innerHeight);
+      window.scrollTo(0, window.chunkNumber * viewportHeight);
       await window.waitForDomSettle();
 
       const { selectorMap: multiSelectorMap } = await window.processElements(
